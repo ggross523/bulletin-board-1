@@ -1,6 +1,10 @@
 Rails.application.routes.draw do
+ root to:"boards#index"
+ 
+  # get("/", { :controller => "boards", :action => "index" })
+
   # Routes for the Post resource:
- get("/", { :controller => "boards", :action => "index" })
+
   # CREATE
   post("/insert_post", { :controller => "posts", :action => "create" })
           

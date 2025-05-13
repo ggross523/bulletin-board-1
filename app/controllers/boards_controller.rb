@@ -1,62 +1,61 @@
 class BoardsController < ApplicationController
   def index
     matching_boards = Board.all
+
     @list_of_boards = matching_boards.order({ :created_at => :desc })
+
     render({ :template => "boards/index" })
   end
-  
+
   def show
     the_id = params.fetch("path_id")
+
     matching_boards = Board.where({ :id => the_id })
+
     @the_board = matching_boards.at(0)
+
+    @matching_posts = Post.where({ :board_id => @the_board.id })
+
+    @active_posts = @matching_posts.where({ :expires_on => (Time.current...) }).order(:expires_on)
     
-    # Add this check to handle the case when the board doesn't exist
-    if @the_board.nil?
-      redirect_to("/boards", { :alert => "Board not found." })
-    else
-      render({ :template => "boards/show" })
-    end
+    @expired_posts = @matching_posts.where.not({ :expires_on => (Time.current...) }).order({ :expires_on => :desc })
+
+    render({ :template => "boards/show" })
   end
-  
+
   def create
     the_board = Board.new
     the_board.name = params.fetch("query_name")
+
     if the_board.valid?
       the_board.save
-      redirect_to("/boards", { :notice => "Board created successfully." })
+      redirect_to("/boards/#{the_board.id}", { :notice => "Board created successfully." })
     else
       redirect_to("/boards", { :alert => the_board.errors.full_messages.to_sentence })
     end
   end
-  
+
   def update
     the_id = params.fetch("path_id")
     the_board = Board.where({ :id => the_id }).at(0)
-    
-    # Add this check to handle the case when the board doesn't exist
-    if the_board.nil?
-      redirect_to("/boards", { :alert => "Board not found." })
+
+    the_board.name = params.fetch("query_name")
+
+    if the_board.valid?
+      the_board.save
+      redirect_to("/boards/#{the_board.id}", { :notice => "Board updated successfully."} )
     else
-      the_board.name = params.fetch("query_name")
-      if the_board.valid?
-        the_board.save
-        redirect_to("/boards/#{the_board.id}", { :notice => "Board updated successfully."} )
-      else
-        redirect_to("/boards/#{the_board.id}", { :alert => the_board.errors.full_messages.to_sentence })
-      end
+      redirect_to("/boards/#{the_board.id}", { :alert => the_board.errors.full_messages.to_sentence })
     end
   end
-  
+
   def destroy
     the_id = params.fetch("path_id")
     the_board = Board.where({ :id => the_id }).at(0)
-    
-    # Add this check to handle the case when the board doesn't exist
-    if the_board.nil?
-      redirect_to("/boards", { :alert => "Board not found." })
-    else
-      the_board.destroy
-      redirect_to("/boards", { :notice => "Board deleted successfully."} )
-    end
+
+    the_board.destroy
+
+    redirect_to("/boards", { :notice => "Board deleted successfully."} )
   end
 end
+
